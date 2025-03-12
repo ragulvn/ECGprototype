@@ -1,0 +1,84 @@
+/*
+Schematics:
+
+HM-10 Module Connection with Adafruit metro board:
+
+- VCC to 5V on Adafruit Metro
+- GND to GND on Adafruit Metro
+- TX to D10 on Adafruit Metro
+- RX to D11 on Adafruit Metro (through a voltage divider as RX on the HM-10 works at 3.3V)
+
+AD8232 Sensor with Adafruit metro board:
+
+- Output (SDN) to A0 (ECG_PIN)
+- LO+ to Pin 2 (LO_PLUS)
+- LO- to Pin 3 (LO_MINUS)
+- GND to GND on Adafruit Metro
+- 3.3V or 5V to VCC (depending on your AD8232 version)
+*/
+
+
+
+#include <SoftwareSerial.h>
+
+/*
+- HM-10 Bluetooth module is connected using SoftwareSerial
+- TX (HM-10) to D10 (Adafruit Metro)
+- RX (HM-10) to D11 (Adafruit Metro) (Use a voltage divider for RX as HM-10 is 3.3V logic)
+*/
+
+SoftwareSerial BT(10, 11); 
+
+// Constants to define the ECG sensor pin and lead-off detection pins
+
+// ECG output connected to analog pin A0
+const int ECG_PIN = A0;  
+// Lead-Off positive detection connected to digital pin 2
+const int LO_PLUS = 2;   
+// Lead-Off negative detection connected to digital pin 3
+const int LO_MINUS = 3;  
+
+/*
+- Setup function initializes the serial communications and pin modes.
+- This function is called once when the program starts.
+*/
+
+void setup() {
+    // Start serial communication with the computer at 115200 baud
+    Serial.begin(115200);
+
+    // Start serial communication with the HM-10 Bluetooth module at 9600 baud
+    BT.begin(9600);  
+    
+    // Set LO+ and LO- pins as inputs for lead-off detection
+    pinMode(LO_PLUS, INPUT);
+    pinMode(LO_MINUS, INPUT);
+}
+
+/*
+- Main loop runs continuously after setup.
+- It reads the ECG sensor data and detects if the leads are off.
+- Data is sent via Bluetooth and to the serial monitor.
+*/
+
+void loop() {
+    // Check if either of the lead-off pins (LO+ or LO-) detects a lead-off condition
+    if (digitalRead(LO_PLUS) == 1 || digitalRead(LO_MINUS) == 1) {
+        // If a lead-off is detected, print a message to both serial monitor and Bluetooth
+        Serial.println("Lead Off!");
+        BT.println("Lead Off!");
+    } 
+    else {
+        // If leads are properly connected, read the ECG value from the analog pin
+        int ecgValue = analogRead(ECG_PIN);
+        
+        // Send the ECG value to both the serial monitor and the Bluetooth device
+        Serial.println(ecgValue);
+        BT.println(ecgValue);
+    }
+    
+    // Small delay to ensure stable readings (2 milliseconds)
+    delay(2);
+}
+
+
